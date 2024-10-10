@@ -135,7 +135,7 @@ class Model(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, Freq_aug=None):
+    def forward(self, x, Freq_aug=False):
         # Input raw waveform (expected shape: batch_size x channels x samples)
         x = self.conv1(x)
         x = self.bn1(x)
