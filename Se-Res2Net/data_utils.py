@@ -39,28 +39,29 @@ def genSpoof_list_InTheWild(dir_meta, is_train=False, is_eval=False):
     d_meta = {}
     file_list = []
     with open(dir_meta, "r") as f:
-        l_meta = f.readlines()[1:]
+        l_meta = f.readlines()
 
     if is_train:
         for line in l_meta:
-            key, _, label = line.strip().split(",")
-            key = key.replace(".wav", "")  # 확장자 .wav 제거
+            _, key, _, _, label = line.strip().split(" ")  # 불필요한 중간 열 제거
+            _, _, _, key = key.strip().split("_")
             file_list.append(key)
-            d_meta[key] = 1 if label == "bona-fide" else 0
+            d_meta[key] = 1 if label == "bonafide" else 0
         return d_meta, file_list
 
     elif is_eval:
         for line in l_meta:
-            key, _, label = line.strip().split(",")
-            key = key.replace(".wav", "")  # 확장자 .wav 제거
+            _, key, _, _, label = line.strip().split(" ")
+            _, _, _, key = key.strip().split("_")
             file_list.append(key)
         return file_list
     else:
         for line in l_meta:
-            key, _, label = line.strip().split(",") 
-            key = key.replace(".wav", "")  # 확장자 .wav 제거
+            _, key, _, _, label = line.strip().split(" ")
+            _, _, _, key = key.strip().split("_")
             file_list.append(key)
-            d_meta[key] = 1 if label == "bona-fide" else 0
+            d_meta[key] = 1 if label == "bonafide" else 0
+
         return d_meta, file_list
 
 def pad(x, max_len=64600):
