@@ -54,10 +54,10 @@ def main(args: argparse.Namespace) -> None:
     dev_trial_path = (database_path /
                        "ASVspoof5.dev.metainfor.txt")
     eval_trial_path = (database_path /
-                       "In_the_wild.csv")
+                       "new_In_the_wild.trn")
     
     # define model related paths
-    model_tag = "{}_ep{}_bs{}".format(
+    model_tag = "new_{}_ep{}_bs{}".format(
         os.path.splitext(os.path.basename(args.config))[0],
         config["num_epochs"], config["batch_size"])
     if args.comment:
@@ -155,7 +155,7 @@ def main(args: argparse.Namespace) -> None:
         if best_dev_eer >= dev_eer:
             print("best model find at epoch", epoch)
             best_dev_eer = dev_eer
-            
+
             print("Saving epoch {} for swa".format(epoch))
             optimizer_swa.update_swa()
             n_swa_update += 1
@@ -230,7 +230,7 @@ def get_loader_eval(
 
     eval_database_path = database_path / "flac_E/"  # 평가 데이터셋 경로
     eval_trial_path = (database_path /
-                       "In_the_wild.csv")  # 평가용 메타 정보 파일 경로
+                       "new_In_the_wild.trn")  # 평가용 메타 정보 파일 경로
 
     # Evaluation set
     file_eval = genSpoof_list_InTheWild(dir_meta=eval_trial_path,
@@ -287,7 +287,7 @@ def produce_evaluation_file_InTheWild(
     """Perform evaluation and save the score to a file"""
     model.eval()
     with open(trial_path, "r") as f_trl:
-        trial_lines = f_trl.readlines()[1:]
+        trial_lines = f_trl.readlines()
     fname_list = []
     score_list = []
     for batch_x, utt_id in tqdm(data_loader):
@@ -303,19 +303,11 @@ def produce_evaluation_file_InTheWild(
     #assert len(trial_lines) == len(fname_list) == len(score_list)
     with open(save_path, "w") as fh:
         for fn, sco, trl in zip(fname_list, score_list, trial_lines):
-            utt_id, spk_id, key = trl.strip().split(',')
-            # 확장자 .wav 제거
-            utt_id = utt_id.replace(".wav", "")
-
-            # spk_id에 공백이 있으면 하이픈으로 변환
-            spk_id = spk_id.replace(" ", "-")
-
-            # key가 'bona-fide'일 경우 하이픈 제거
-            if key == 'bona-fide':
-               key = 'bonafide'
-               
+            spk_id, utt_id, _, src, key = trl.strip().split(' ')
+            _, _, _, utt_id = utt_id.strip().split("_")
             assert fn == utt_id
             fh.write("{} {} {} {}\n".format(spk_id, utt_id, sco, key))
+
     print("Scores saved to {}".format(save_path))
 
 def train_epoch(

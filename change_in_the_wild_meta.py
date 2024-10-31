@@ -19,7 +19,7 @@ def change_in_the_wild_meta(dir_meta, save_path):
             fh.write("{} {} - - {}\n".format(spk_id, fname, label))
 
 if __name__ == "__main__":
-    dir_meta = r"C:\Users\jiyoung\asvspoof5\database\In_the_wild.csv"
-    save_path = r"C:\Users\jiyoung\asvspoof5\database\new_In_the_wild.trn"
+    dir_meta = r'/Volumes/Seagate Expansion Drive/ADD/asvspoof5/database/In_the_wild.csv'
+    save_path = r'/Users/hongjiyoung/ADD/new_In_the_wild.trn'
 
     change_in_the_wild_meta(dir_meta, save_path)
