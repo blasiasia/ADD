@@ -22,7 +22,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchcontrib.optim import SWA
 
-from data_utils import (TrainDataset,TestDataset, TestDataset_InTheWild, genSpoof_list, genSpoof_list_InTheWild)
+from data_utils import (TrainDataset,TestDataset, genSpoof_list, genSpoof_list_InTheWild)
 from eval.calculate_metrics import calculate_minDCF_EER_CLLR, calculate_aDCF_tdcf_tEER
 from utils import create_optimizer, seed_worker, set_seed, str_to_bool
 
@@ -54,7 +54,7 @@ def main(args: argparse.Namespace) -> None:
     dev_trial_path = (database_path /
                        "ASVspoof5.dev.metainfor.txt")
     eval_trial_path = (database_path /
-                       "new_In_the_wild.trn")
+                       "database01_eval_meta.trn")
     
     # define model related paths
     model_tag = "{}_ep{}_bs{}".format(
@@ -230,7 +230,7 @@ def get_loader_eval(
 
     eval_database_path = database_path / "flac_E/"  # 평가 데이터셋 경로
     eval_trial_path = (database_path /
-                       "new_In_the_wild.trn")  # 평가용 메타 정보 파일 경로
+                       "database01_eval_meta.trn")  # 평가용 메타 정보 파일 경로
 
     # Evaluation set
     file_eval = genSpoof_list(dir_meta=eval_trial_path,

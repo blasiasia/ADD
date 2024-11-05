@@ -114,26 +114,25 @@ class TestDataset(Dataset):
         self.list_IDs = list_IDs
         self.base_dir = base_dir
         self.cut = 64600  # take ~4 sec audio (64600 samples)
-        self.extensions = ['.flac', '.wav', '.mp3']  # 지원할 확장자 목록
+        self.extensions = ['.flac', '.wav'] #, '.mp3']  # 지원할 확장자 목록
 
     def __len__(self):
         return len(self.list_IDs)
 
     def __getitem__(self, index):
         key = self.list_IDs[index]
-        
+
         # 파일 확장자 확인 및 파일 읽기
         for ext in self.extensions:
             file_path = self.base_dir / f"{key}{ext}"
             if file_path.exists():
                 X, _ = sf.read(str(file_path))
-                break
-        else:
-            raise FileNotFoundError(f"No audio file found for {key} with supported extensions.")
-
-        X_pad = pad(X, self.cut)
-        x_inp = Tensor(X_pad).unsqueeze(0)
-        return x_inp, key
+                X_pad = pad(X, self.cut)
+                x_inp = Tensor(X_pad).unsqueeze(0)
+                return x_inp, key
+        # 파일이 없으면 None 반환
+        print(f"Warning: No audio file found for {key} with supported extensions.")
+        return None, key
     
 ''' 
 class TestDataset(Dataset):
