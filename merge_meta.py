@@ -1,20 +1,21 @@
-def merge_meta_files(meta_file1, meta_file2, output_file):
+import os
+
+def merge_meta_files(meta_dir, output_file):
+    # output_file 초기화
     with open(output_file, "w") as outfile:
-        # 첫 번째 메타 파일 읽기
-        with open(meta_file1, "r") as f1:
-            lines1 = f1.readlines()
-            outfile.writelines(lines1)
+        # meta_dir의 모든 파일 순회
+        for file_name in os.listdir(meta_dir):
+            file_path = os.path.join(meta_dir, file_name)
+            # 파일이 .csv 또는 .trn로 끝나는지 확인
+            if os.path.isfile(file_path) and (file_path.endswith(".csv") or file_path.endswith(".trn")):
+                with open(file_path, "r") as infile:
+                    lines = infile.readlines()
+                    # 첫 번째 파일의 헤더를 제외한 이후 파일의 첫 줄을 생략하려면 아래처럼 조건 추가
+                    outfile.writelines(lines)
+                print(f"Added {file_name} to {output_file}")
 
-        # 두 번째 메타 파일 읽기
-        with open(meta_file2, "r") as f2:
-            lines2 = f2.readlines()
-            outfile.writelines(lines2)
+if __name__ == "__main__":
+    meta_dir = r'/path/to/meta_folder'  # 메타데이터 파일들이 들어 있는 폴더
+    output_file = r'/path/to/output_file.csv'  # 결과를 저장할 파일
 
-    print(f"Merged file created at: {output_file}")
-
-# 예시 파일 경로
-meta_file1 = "/path/to/meta1.csv"
-meta_file2 = "/path/to/meta2.csv"
-output_file = "/path/to/merged_meta.csv"
-
-merge_meta_files(meta_file1, meta_file2, output_file)
+    merge_meta_files(meta_dir, output_file)
