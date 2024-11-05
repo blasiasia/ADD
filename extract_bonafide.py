@@ -2,9 +2,9 @@ import shutil
 import os
 
 def genBonafide_list(database_path, save_path):
-    dir_meta = os.path.join(database_path, r"ASVspoof2019_PA_cm_protocols", "ASVspoof2019.PA.cm.dev.trl.txt")
-    flac_path = os.path.join(database_path, r"ASVspoof2019_PA_dev", "flac")
-    txt_save_path = os.path.join(save_path, r"ASVspoof2019.PA.cm.dev_Bonafide.trn")
+    dir_meta = os.path.join(database_path, "In_the_wild.trn")
+    flac_path = os.path.join(database_path, "flac")
+    txt_save_path = os.path.join(save_path, r"In_the_wild_Bonafide.trn")
 
     with open(txt_save_path, "w") as fh:
         with open(dir_meta, "r") as f:
@@ -17,8 +17,8 @@ def genBonafide_list(database_path, save_path):
                 
                 fh.write("{} {} - - {}\n".format(spk_id, fname, label))
                 
-                file_path = os.path.join(flac_path, f"{fname}.flac")
-                destination_path = os.path.join(save_path, "flac", f"{fname}.flac")
+                file_path = os.path.join(flac_path, f"{fname}.wav")
+                destination_path = os.path.join(save_path, "flac", f"{fname}.wav")
 
                 # 파일 존재 여부 확인
                 if not os.path.exists(destination_path):
@@ -35,8 +35,8 @@ def genBonafide_list(database_path, save_path):
                     print(f"'{fname}' 파일을 '{file_path}'에서 찾을 수 없습니다.")
 
 if __name__ == "__main__":
-    database_path = r"c:\Users\jiyoung\DS_ASVspoof2019\PA"
-    save_path = r"c:\Users\jiyoung\DS_ASVspoof2019\PA\ASVspoof2019_PA_dev_Bonafide"
+    database_path = r"E:\ADD\DS_In_the_wild\new_In_the_wild"
+    save_path = r"E:\ADD\DS_In_the_wild\new_In_the_wild_Bonafide"
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
