@@ -34,35 +34,6 @@ def genSpoof_list(dir_meta, is_train=False, is_eval=False):
             d_meta[key] = 1 if label == "bonafide" else 0
         return d_meta, file_list
 
-def genSpoof_list_InTheWild(dir_meta, is_train=False, is_eval=False):
-
-    d_meta = {}
-    file_list = []
-    with open(dir_meta, "r") as f:
-        l_meta = f.readlines()
-
-    if is_train:
-        for line in l_meta:
-            _, key, _, _, label = line.strip().split(" ")  # 불필요한 중간 열 제거
-            _, _, _, key = key.strip().split("_")
-            file_list.append(key)
-            d_meta[key] = 1 if label == "bonafide" else 0
-        return d_meta, file_list
-
-    elif is_eval:
-        for line in l_meta:
-            _, key, _, _, label = line.strip().split(" ")
-            _, _, _, key = key.strip().split("_")
-            file_list.append(key)
-        return file_list
-    else:
-        for line in l_meta:
-            _, key, _, _, label = line.strip().split(" ")
-            _, _, _, key = key.strip().split("_")
-            file_list.append(key)
-            d_meta[key] = 1 if label == "bonafide" else 0
-
-        return d_meta, file_list
 
 def pad(x, max_len=64600):
     x_len = x.shape[0]
@@ -70,7 +41,8 @@ def pad(x, max_len=64600):
         return x[:max_len]
     # need to pad
     num_repeats = int(max_len / x_len) + 1
-    padded_x = np.tile(x, (1, num_repeats))[:, :max_len][0]
+    #padded_x = np.tile(x, (1, num_repeats))[:, :max_len][0]
+    padded_x = np.tile(x, num_repeats)[:max_len]
     return padded_x
 
 
@@ -127,12 +99,12 @@ class TestDataset(Dataset):
             file_path = self.base_dir / f"{key}{ext}"
             if file_path.exists():
                 X, _ = sf.read(str(file_path))
+                # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
+                if X.ndim == 2 and X.shape[1] > 1:
+                    X = X[:, 0]  # 첫 번째 채널만 사용
                 X_pad = pad(X, self.cut)
                 x_inp = Tensor(X_pad).unsqueeze(0)
                 return x_inp, key
-        # 파일이 없으면 None 반환
-        print(f"Warning: No audio file found for {key} with supported extensions.")
-        return None, key
     
 ''' 
 class TestDataset(Dataset):
@@ -152,22 +124,5 @@ class TestDataset(Dataset):
         X_pad = pad(X, self.cut)
         x_inp = Tensor(X_pad).unsqueeze(0)
         return x_inp, key
-    
-class TestDataset_InTheWild(Dataset):
-    def __init__(self, list_IDs, base_dir):
-        """self.list_IDs	: list of strings (each string: utt key),
-        """
-        self.list_IDs = list_IDs
-        self.base_dir = base_dir
-        self.cut = 64600  # take ~4 sec audio (64600 samples)
 
-    def __len__(self):
-        return len(self.list_IDs)
-
-    def __getitem__(self, index):
-        key = self.list_IDs[index]
-        X, _ = sf.read(str(self.base_dir / f"{key}.wav"))
-        X_pad = pad(X, self.cut)
-        x_inp = Tensor(X_pad).unsqueeze(0)
-        return x_inp, key
 '''
