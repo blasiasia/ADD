@@ -93,7 +93,7 @@ def main(args: argparse.Namespace) -> None:
         print("Model loaded : {}".format(config["model_path"]))
         print("Start evaluation...")
         eval_loader = get_loader_eval(database_path, args.seed, config)
-        produce_evaluation_file_InTheWild(eval_loader, model, device,
+        produce_evaluation_file(eval_loader, model, device,
                                 eval_score_path, eval_trial_path)
 
         eval_dcf, eval_eer, eval_cllr = calculate_minDCF_EER_CLLR(
@@ -233,12 +233,12 @@ def get_loader_eval(
                        "new_In_the_wild.trn")  # 평가용 메타 정보 파일 경로
 
     # Evaluation set
-    file_eval = genSpoof_list_InTheWild(dir_meta=eval_trial_path,
+    file_eval = genSpoof_list(dir_meta=eval_trial_path,
                                  is_train=False,
                                  is_eval=True)  # 평가용으로 설정
     print("no. evaluation files:", len(file_eval))
 
-    eval_set = TestDataset_InTheWild(list_IDs=file_eval,
+    eval_set = TestDataset(list_IDs=file_eval,
                            base_dir=eval_database_path)
     eval_loader = DataLoader(eval_set,
                              batch_size=config["batch_size"],

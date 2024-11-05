@@ -107,7 +107,35 @@ class TrainDataset(Dataset):
         y = self.labels[key]
         return x_inp, y
 
+class TestDataset(Dataset):
+    def __init__(self, list_IDs, base_dir):
+        """self.list_IDs	: list of strings (each string: utt key),
+        """
+        self.list_IDs = list_IDs
+        self.base_dir = base_dir
+        self.cut = 64600  # take ~4 sec audio (64600 samples)
+        self.extensions = ['.flac', '.wav', '.mp3']  # 지원할 확장자 목록
 
+    def __len__(self):
+        return len(self.list_IDs)
+
+    def __getitem__(self, index):
+        key = self.list_IDs[index]
+        
+        # 파일 확장자 확인 및 파일 읽기
+        for ext in self.extensions:
+            file_path = self.base_dir / f"{key}{ext}"
+            if file_path.exists():
+                X, _ = sf.read(str(file_path))
+                break
+        else:
+            raise FileNotFoundError(f"No audio file found for {key} with supported extensions.")
+
+        X_pad = pad(X, self.cut)
+        x_inp = Tensor(X_pad).unsqueeze(0)
+        return x_inp, key
+    
+''' 
 class TestDataset(Dataset):
     def __init__(self, list_IDs, base_dir):
         """self.list_IDs	: list of strings (each string: utt key),
@@ -143,3 +171,4 @@ class TestDataset_InTheWild(Dataset):
         X_pad = pad(X, self.cut)
         x_inp = Tensor(X_pad).unsqueeze(0)
         return x_inp, key
+'''
