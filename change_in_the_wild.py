@@ -1,11 +1,11 @@
 import os
 import shutil
 
-def change_in_the_wild_meta(dir_meta, audio_dir, new_audio_dir, save_path):
+def change_in_the_wild_meta(dir_meta, audio_dir, new_audio_dir, new_dir_meta):
     # 새 오디오 폴더 생성
     os.makedirs(new_audio_dir, exist_ok=True)
 
-    with open(save_path, "w") as fh:
+    with open(new_dir_meta, "w") as fh:
         with open(dir_meta, "r") as f:
             l_meta = f.readlines()[1:]
 
@@ -34,12 +34,12 @@ def change_in_the_wild_meta(dir_meta, audio_dir, new_audio_dir, save_path):
             fh.write("{} {} - - {}\n".format(spk_id, new_fname, label))
 
 if __name__ == "__main__":
-    dir_meta = r'/Volumes/Seagate Expansion Drive/ADD/asvspoof5/database/In_the_wild.csv'
-    audio_dir = r'/Volumes/Seagate Expansion Drive/ADD/asvspoof5/database/flac'
-    new_audio_dir = r'/Volumes/Seagate Expansion Drive/ADD/asvspoof5/database/new_flac'
-    save_path = r'/Users/hongjiyoung/ADD/new_In_the_wild.trn'
+    dir_meta = r'E:\ADD\In_the_wild\In_the_wild.csv'
+    audio_dir = r'E:\ADD\In_the_wild\flac'
+    new_audio_dir = r'E:\ADD\new_In_the_wild\flac'
+    new_dir_meta = r'E:\ADD\new_In_the_wild\In_the_wild.trn'
 
-    change_in_the_wild_meta(dir_meta, audio_dir, new_audio_dir, save_path)
+    change_in_the_wild_meta(dir_meta, audio_dir, new_audio_dir, new_dir_meta)
 
 
 '''

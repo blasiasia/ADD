@@ -12,7 +12,7 @@ def change_asvspoof2021_LA_meta(dir_meta, save_path):
             fh.write("# {} - - #\n".format(fname))
 
 if __name__ == "__main__":
-    dir_meta = r'/Volumes/Seagate Expansion Drive/ADD/asvspoof5/database/In_the_wild.csv'
-    save_path = r'/Users/hongjiyoung/ADD/new_In_the_wild.trn'
+    dir_meta = r'E:\ADD\DS_ASVspoof2021\ASVspoof2021_LA_eval/ASVspoof2021.LA.cm.eval.trl.txt'
+    save_path = r'E:\ADD\DS_ASVspoof2021\ASVspoof2021_LA_eval/new_ASVspoof2021.LA.cm.eval.trl.txt'
 
     change_asvspoof2021_LA_meta(dir_meta, save_path)
