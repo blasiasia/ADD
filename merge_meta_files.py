@@ -10,12 +10,11 @@ def merge_meta_files(meta_dir, output_file):
             if os.path.isfile(file_path) and (file_path.endswith(".csv") or file_path.endswith(".trn")):
                 with open(file_path, "r") as infile:
                     lines = infile.readlines()
-                    # 첫 번째 파일의 헤더를 제외한 이후 파일의 첫 줄을 생략하려면 아래처럼 조건 추가
                     outfile.writelines(lines)
                 print(f"Added {file_name} to {output_file}")
 
 if __name__ == "__main__":
-    meta_dir = r'/path/to/meta_folder'  # 메타데이터 파일들이 들어 있는 폴더
-    output_file = r'/path/to/output_file.csv'  # 결과를 저장할 파일
+    meta_dir = r'e:\ADD\DS_SeRes2net\database01\metadata'  # 메타데이터 파일들이 들어 있는 폴더
+    output_file = r'e:\ADD\DS_SeRes2net\database01\database01_eval_meta.trn'  # 결과를 저장할 파일
 
     merge_meta_files(meta_dir, output_file)
