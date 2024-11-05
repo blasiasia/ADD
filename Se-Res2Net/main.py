@@ -57,7 +57,7 @@ def main(args: argparse.Namespace) -> None:
                        "new_In_the_wild.trn")
     
     # define model related paths
-    model_tag = "new_{}_ep{}_bs{}".format(
+    model_tag = "{}_ep{}_bs{}".format(
         os.path.splitext(os.path.basename(args.config))[0],
         config["num_epochs"], config["batch_size"])
     if args.comment:
