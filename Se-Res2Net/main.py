@@ -98,7 +98,7 @@ def main(args: argparse.Namespace) -> None:
 
         eval_dcf, eval_eer, eval_cllr = calculate_minDCF_EER_CLLR(
             cm_scores_file=eval_score_path,
-            output_file=model_tag/"loaded_model_result.txt")
+            output_file=model_tag/"loaded_model_result_on_database01.txt")
         print("DONE. eval_eer: {:.3f}, eval_dcf:{:.5f} , eval_cllr:{:.5f}".format(eval_eer, eval_dcf, eval_cllr))
 
         """
