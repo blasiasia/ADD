@@ -47,4 +47,4 @@ if __name__ == "__main__":
     metadata_file_path = 'path/to/your/output/folder/metadata.txt'  # metadata 파일 저장 경로
     speed = 1.0  # 음성 생성 속도 (기본 1.0)
 
-    generate_speech_from_text(input_folder, output_folder, speaker_ids, device)
+    generate_speech_from_text(input_folder, output_folder, speaker_ids, device, metadata_file_path, speed)
