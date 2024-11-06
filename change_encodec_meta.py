@@ -1,8 +1,7 @@
 def modify_metadata(input_metadata_path, output_metadata_path):
-    # 입력 파일을 열고, 출력 파일을 준비합니다.
+    
     with open(input_metadata_path, 'r') as infile, open(output_metadata_path, 'w') as outfile:
         for line in infile:
-            # 한 줄씩 읽고, 공백 기준으로 나눕니다.
             parts = line.strip().split(' ')
             
             if len(parts) == 5:
