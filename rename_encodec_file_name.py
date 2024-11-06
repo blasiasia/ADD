@@ -9,7 +9,7 @@ def rename_encodec_file_name(folder_path):
             # 파일명 예시: E01_19D_0000000.wav
             parts = filename.split('_')  # '_' 기준으로 분리
             
-            if len(parts) == 3 :  # 올바른 형식의 파일명인지 확인
+            if len(parts) == 3 and parts[0] != "LA":  # 올바른 형식의 파일명인지 확인
                 # 기존 형식: ['E01', '19D', '0000000']
                 # 새로운 형식으로 변경
                 if parts[0] == "E01" : 
@@ -50,5 +50,5 @@ def rename_encodec_file_name(directory):
 '''
 
 # 파일명이 있는 폴더 경로 지정
-directory = r"e:\ADD\DS_SeRes2net\database01\flac_E"
+directory = r"e:\ADD\DS_Encodec\ASVspoof2019_LA_eval_Spoof\E01_wav"
 rename_encodec_file_name(directory)
