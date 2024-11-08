@@ -14,7 +14,7 @@ def merge_meta_files(meta_dir, output_file):
                 print(f"Added {file_name} to {output_file}")
 
 if __name__ == "__main__":
-    meta_dir = r'e:\ADD\DS_SeRes2net\database01\metadata'  # 메타데이터 파일들이 들어 있는 폴더
-    output_file = r'e:\ADD\DS_SeRes2net\database01\database01_eval_meta.trn'  # 결과를 저장할 파일
+    meta_dir = r'e:\ADD\DS_Ours\database01\metadata'  # 메타데이터 파일들이 들어 있는 폴더
+    output_file = r'e:\ADD\DS_Ours\database01\db01_eval_meta.trn'  # 결과를 저장할 파일
 
     merge_meta_files(meta_dir, output_file)
