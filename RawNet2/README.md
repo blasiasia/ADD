@@ -1,4 +1,4 @@
-# SE-Res2Net ASVspoof5 Baseline
+# RawNet2 ASVspoof5 Baseline
 By Hye-jin Shim, Carnegie Mellon University, 2024
 
 
