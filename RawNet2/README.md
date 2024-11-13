@@ -1,4 +1,4 @@
-# SE-Res2Net ASVspoof5 Baseline
+# RawNet2 ASVspoof5 Baseline
 By Hye-jin Shim, Carnegie Mellon University, 2024
 
 
@@ -13,24 +13,24 @@ To set up a new conda environment to run an experiment using GPU, follow the cod
 If you want to use your existing environment, please check the Pytorch and Cuda versions and run the last line only.
 
 ```
-conda create --name se_res2net python=3.9
-conda activate se_res2net
+conda create --name rawnet2 python=3.9
+conda activate rawnet2
 conda install pytorch==1.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 pip install -r requirements.txt
 ```
 
 ## Usage
-Before running the experiment, replace the data directory of `database_path` in the config file of `./config/SE-Res2Net_ASVspoof5.conf`.
+Before running the experiment, replace the data directory of `database_path` in the config file of `./config/RawNet2_ASVspoof5.conf`.
 
 To train the model:
 ```
-python ./main.py --config ./config/SE-Res2Net_ASVspoof5.conf
+python ./main.py --config ./config/RawNet2_ASVspoof5.conf
 ```
 
 To evaluate the saved model (showed `EER: 15.2%` on validation set):
 * Evaluation only phase considers both of Phase 1 and Phase 2 evaluation metrics
 ```
-python ./main.py --config ./config/SE-Res2Net_ASVspoof5.conf --eval
+python ./main.py --config ./config/RawNet2_ASVspoof5.conf --eval
 ```
 
 ## Citation
