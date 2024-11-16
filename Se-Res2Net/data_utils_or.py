@@ -62,8 +62,7 @@ def pad_random(x: np.ndarray, max_len: int = 64600):
 class TrainDataset(Dataset):
     def __init__(self, list_IDs, labels, base_dir):
         """self.list_IDs	: list of strings (each string: utt key),
-           self.labels      : dictionary (key: utt key, value: label integer)
-           self.base_dir    : 각 오디오 파일의 전체 경로(확장자 제외) -> 리스트"""
+           self.labels      : dictionary (key: utt key, value: label integer)"""
         self.list_IDs = list_IDs
         self.labels = labels
         self.base_dir = base_dir
@@ -74,27 +73,20 @@ class TrainDataset(Dataset):
 
     def __getitem__(self, index):
         key = self.list_IDs[index]
+        X, _ = sf.read(str(self.base_dir / f"{key}.flac"))
+        X_pad = pad_random(X, self.cut)
+        x_inp = Tensor(X_pad).unsqueeze(0)
         y = self.labels[key]
-
-        for file_path in self.base_dir : 
-        # 파일 확장자 확인 및 파일 읽기
-            if file_path.exists():
-                X, _ = sf.read(str(file_path))
-                # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
-                if X.ndim == 2 and X.shape[1] > 1:
-                    X = X[:, 0]  # 첫 번째 채널만 사용
-                X_pad = pad_random(X, self.cut)
-                x_inp = Tensor(X_pad).unsqueeze(0)
-                return x_inp, y
+        return x_inp, y
 
 class TestDataset(Dataset):
     def __init__(self, list_IDs, base_dir):
         """self.list_IDs	: list of strings (each string: utt key),
-           self.base_dir    : 각 오디오 파일의 전체 경로(확장자 제외) -> 리스트,
         """
         self.list_IDs = list_IDs
         self.base_dir = base_dir
         self.cut = 64600  # take ~4 sec audio (64600 samples)
+        self.extensions = ['.flac', '.wav'] #, '.mp3']  # 지원할 확장자 목록
 
     def __len__(self):
         return len(self.list_IDs)
@@ -102,8 +94,9 @@ class TestDataset(Dataset):
     def __getitem__(self, index):
         key = self.list_IDs[index]
 
-        for file_path in self.base_dir : 
-            # 파일 확장자 확인 및 파일 읽기
+        # 파일 확장자 확인 및 파일 읽기
+        for ext in self.extensions:
+            file_path = self.base_dir / f"{key}{ext}"
             if file_path.exists():
                 X, _ = sf.read(str(file_path))
                 # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
