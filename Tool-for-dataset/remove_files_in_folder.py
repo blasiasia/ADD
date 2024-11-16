@@ -1,8 +1,8 @@
 import os
 
 # 파일이 포함된 폴더 경로와 삭제할 파일 이름 접두어 지정
-folder_path = '/path/to/your/folder'  # 폴더 경로
-file_prefix = 'E02_US'  # 삭제할 파일 이름 접두어
+folder_path = r'e:\ADD\DS_Ours\db03\flac_T'  # 폴더 경로
+file_prefix = 'LA_E_'  # 삭제할 파일 이름 접두어
 
 # 폴더 내의 모든 파일을 확인하여, 지정한 접두어로 시작하는 파일 삭제
 for filename in os.listdir(folder_path):

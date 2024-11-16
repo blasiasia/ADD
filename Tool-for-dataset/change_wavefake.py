@@ -100,4 +100,4 @@ if __name__ == "__main__":
     #write_wavefake_meta_file(folder_path, model_name, meta_path)
 
     #Common Voice 파일명 재수정하는 함수
-    rename_WF_CV_files(folder_path)
+    #rename_WF_CV_files(folder_path)
