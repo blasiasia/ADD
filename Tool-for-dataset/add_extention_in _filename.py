@@ -1,6 +1,6 @@
 # 파일 경로 설정
-input_metadata_path = "e:\ADD\DS_ASVspoof2019\LA\ASVspoof2019_LA_eval_Bonafide\ASVspoof2019.LA.cm.eval_Bonafide.trn"
-output_metadata_path = "e:\ADD\DS_ASVspoof2019\LA\ASVspoof2019_LA_eval_Bonafide\metadata.txt"
+input_metadata_path = "/Volumes/System/MeloTTS/chatgpt prompts/melotts_pmt.txt"
+output_metadata_path = "/Volumes/System/MeloTTS/chatgpt prompts/metadata.txt"
 
 # 파일 열고 메타데이터 수정하기
 with open(input_metadata_path, 'r') as input_file, open(output_metadata_path, 'w') as output_file:
@@ -10,7 +10,7 @@ with open(input_metadata_path, 'r') as input_file, open(output_metadata_path, 'w
         
         # 파일명을 수정 (여기서는 예시로 '_mod' 추가)
         if len(parts) > 1:
-            parts[1] = parts[1] + '.flac'
+            parts[1] = parts[1] + '.wav'
         
         # 수정된 줄을 다시 조합해서 출력 파일에 작성
         modified_line = ' '.join(parts) + '\n'
