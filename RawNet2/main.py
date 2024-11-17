@@ -50,13 +50,15 @@ def main(args: argparse.Namespace) -> None:
 
     # define database related paths
     output_dir = Path(args.output_dir)
-    database_path = Path(config["database_path"])
-    dev_trial_path = (database_path /
-                       "ASVspoof5.dev.metainfor.txt")
-    eval_trial_path = (database_path /
-                       "In_the_wild.trn")
-    #eval_trial_path = (database_path /
-    #                   "database01_eval_meta.trn")
+    train_paths = config["train_database_path"]
+    val_paths = config["validation_database_path"]
+    eval_paths = config["evaluation_database_path"]
+    meta_paths = Path(config["meta_path"])
+
+    dev_trial_path = (meta_paths /
+                       "dev_meta.txt")
+    eval_trial_path = (meta_paths /
+                       "eval_meta.txt")
     
     # define model related paths
     model_tag = "{}_ep{}_bs{}".format(
@@ -85,7 +87,7 @@ def main(args: argparse.Namespace) -> None:
 
     # define dataloaders
     trn_loader, dev_loader = get_loader(
-        database_path, args.seed, config)
+        train_paths, val_paths, args.seed, config)
 
     # evaluates pretrained model 
     # NOTE: Currently it is evaluated on the development set instead of the evaluation set
@@ -94,14 +96,13 @@ def main(args: argparse.Namespace) -> None:
             torch.load(config["model_path"], map_location=device))
         print("Model loaded : {}".format(config["model_path"]))
         print("Start evaluation...")
-        eval_loader = get_loader_eval(database_path, args.seed, config)
+        eval_loader = get_loader_eval(eval_paths, args.seed, config)
         produce_evaluation_file(eval_loader, model, device,
                                 eval_score_path, eval_trial_path)
 
         eval_dcf, eval_eer, eval_cllr = calculate_minDCF_EER_CLLR(
             cm_scores_file=eval_score_path,
-            #output_file=model_tag/"database01_loaded_model_result.txt")
-            output_file=model_tag/"Inthewild_loaded_model_result.txt")
+            output_file=model_tag/"db01_loaded_model_result.txt")
         print("DONE. eval_eer: {:.3f}, eval_dcf:{:.5f} , eval_cllr:{:.5f}".format(eval_eer, eval_dcf, eval_cllr))
 
         """
@@ -171,7 +172,7 @@ def get_model(model_config: Dict, device: torch.device):
     """Define DNN model architecture"""
     module = import_module("models.{}".format(model_config["architecture"]))
     _model = getattr(module, "Model")
-    model = _model(model_config, device).to(device)
+    model = _model(model_config).to(device)
     nb_params = sum([param.view(-1).size()[0] for param in model.parameters()])
     print("no. model params:{}".format(nb_params))
 
@@ -179,72 +180,70 @@ def get_model(model_config: Dict, device: torch.device):
 
 
 def get_loader(
-        database_path: str,
+        train_paths: List[str],
+        val_paths: List[str],
         seed: int,
         config: dict) -> List[torch.utils.data.DataLoader]:
-    """Make PyTorch DataLoaders for train / developement"""
+    """Make PyTorch DataLoaders for train / validation"""
 
-    trn_database_path = database_path / "flac_T/"
-    dev_database_path = database_path / "flac_D/"
+    # Train DataLoader
+    train_files, train_labels = [], {}
+    train_list_IDs = []
+    for train_path in train_paths:
+        trn_list_path = Path(train_path) / "metadata.txt"
+        trn_base_path = Path(train_path) / "flac"
+        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False)
+        train_labels.update(labels)
+        train_files.extend([trn_base_path / f"{f}" for f in files])
+        train_list_IDs.extend([f"{f}" for f in files])
 
-    trn_list_path = (database_path /
-                     "ASVspoof5.train.metainfor.txt")
-    dev_trial_path = (database_path /
-                      "ASVspoof5.dev.metainfor.txt")
+    print("no. training files:", len(train_files))
+    print("train_files :", train_files[:5])
+    print("train_list_IDs :", train_list_IDs[:5])
+    train_set = TrainDataset(list_IDs=train_list_IDs, labels=train_labels, base_dir=train_files)
+    gen = torch.Generator().manual_seed(seed)
+    trn_loader = DataLoader(
+        train_set, batch_size=config["batch_size"], shuffle=True,
+        drop_last=True, pin_memory=True, worker_init_fn=seed_worker, generator=gen
+    )
 
-    d_label_trn, file_train = genSpoof_list(dir_meta=trn_list_path,
-                                            is_train=True,
-                                            is_eval=False)
-    print("no. training files:", len(file_train))
+    # Validation DataLoader
+    val_files = []
+    val_list_IDs = []
+    for val_path in val_paths:
+        dev_list_path = Path(val_path) / "metadata.txt"
+        dev_base_path = Path(val_path) /"flac"
+        _, files = genSpoof_list(dir_meta=dev_list_path, is_train=False, is_eval=False)
+        val_files.extend([dev_base_path / f"{f}" for f in files])
+        val_list_IDs.extend([f"{f}" for f in files])
 
-    train_set = TrainDataset(list_IDs=file_train,
-                                           labels=d_label_trn,
-                                           base_dir=trn_database_path)
-    gen = torch.Generator()
-    gen.manual_seed(seed)
-    trn_loader = DataLoader(train_set,
-                            batch_size=config["batch_size"],
-                            shuffle=True,
-                            drop_last=True,
-                            pin_memory=True,
-                            worker_init_fn=seed_worker,
-                            generator=gen)
-
-    _, file_dev = genSpoof_list(dir_meta=dev_trial_path,
-                                is_train=False,
-                                is_eval=False)
-    print("no. validation files:", len(file_dev))
-
-    dev_set = TestDataset(list_IDs=file_dev[:2000],
-                                            base_dir=dev_database_path)
-    dev_loader = DataLoader(dev_set,
-                            batch_size=config["batch_size"],
-                            shuffle=False,
-                            drop_last=False,
-                            pin_memory=True)
+    print("no. validation files:", len(val_files))
+    dev_set = TestDataset(list_IDs=val_list_IDs, base_dir=val_files)
+    dev_loader = DataLoader(
+        dev_set, batch_size=config["batch_size"], shuffle=False, drop_last=False, pin_memory=True
+    )
 
     return trn_loader, dev_loader
 
 def get_loader_eval(
-        database_path: str,
+        eval_paths: List[str],
         seed: int,
         config: dict) -> List[torch.utils.data.DataLoader]:
     """Make PyTorch DataLoader for evaluation"""
 
-    eval_database_path = database_path / "flac_E/"  # 평가 데이터셋 경로
-    eval_trial_path = (database_path /
-                       "In_the_wild.trn")
-    #eval_trial_path = (database_path /
-    #                   "database01_eval_meta.trn")  # 평가용 메타 정보 파일 경로
+    # Evaluation DataLoader
+    eval_files = []
+    eval_list_IDs = []
+    for eval_path in eval_paths:
+        eval_list_path = Path(eval_path) / "metadata.txt"
+        eval_base_path = Path(eval_path) /"flac"
+        files = genSpoof_list(dir_meta=eval_list_path, is_train=False, is_eval=True)
+        eval_files.extend([eval_base_path / f"{f}" for f in files])
+        eval_list_IDs.extend([f"{f}" for f in files])
 
-    # Evaluation set
-    file_eval = genSpoof_list(dir_meta=eval_trial_path,
-                                 is_train=False,
-                                 is_eval=True)  # 평가용으로 설정
-    print("no. evaluation files:", len(file_eval))
+    print("no. evaluation files:", len(eval_files))
 
-    eval_set = TestDataset(list_IDs=file_eval,
-                           base_dir=eval_database_path)
+    eval_set = TestDataset(list_IDs=eval_list_IDs, base_dir=eval_files)
     eval_loader = DataLoader(eval_set,
                              batch_size=config["batch_size"],
                              shuffle=False,
@@ -305,8 +304,11 @@ def train_epoch(
         ii += 1
         batch_x = batch_x.to(device)
         batch_y = batch_y.view(-1).type(torch.int64).to(device)
-        batch_out = model(batch_x)
- 
+        #_, batch_out = model(batch_x, Freq_aug=str_to_bool(config["freq_aug"]))
+
+        # Forward pass through the model
+        batch_out = model(batch_x, Freq_aug=str_to_bool(config["freq_aug"]))  # 수정된 부분
+
         batch_loss = criterion(batch_out, batch_y)
         running_loss += batch_loss.item() * batch_size
         optim.zero_grad()
