@@ -1,6 +1,6 @@
 # 파일 경로 설정
-input_metadata_path = "/Volumes/System/MeloTTS/chatgpt prompts/melotts_pmt.txt"
-output_metadata_path = "/Volumes/System/MeloTTS/chatgpt prompts/metadata.txt"
+input_metadata_path = "e:\ADD\DS_WaveFake\ljspeech_waveglow\WaveFake_WG.trn"
+output_metadata_path = "e:\ADD\DS_WaveFake\ljspeech_waveglow\metadata.txt"
 
 # 파일 열고 메타데이터 수정하기
 with open(input_metadata_path, 'r') as input_file, open(output_metadata_path, 'w') as output_file:
