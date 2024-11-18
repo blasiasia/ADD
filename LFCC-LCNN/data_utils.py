@@ -3,13 +3,14 @@ import soundfile as sf
 import torch
 from torch import Tensor
 from torch.utils.data import Dataset
+import random
 
 ___author__ = "Hemlata Tak, Jee-weon Jung"
 __email__ = "tak@eurecom.fr, jeeweon.jung@navercorp.com"
 
 
-def genSpoof_list(dir_meta, is_train=False, is_eval=False):
-
+def genSpoof_list(dir_meta, is_train=False, is_eval=False, retain_ratio=None, seed=None):
+    # retain_ratio : 전체 dataset에서 40% sampling
     d_meta = {}
     file_list = []
     with open(dir_meta, "r") as f:
@@ -20,19 +21,30 @@ def genSpoof_list(dir_meta, is_train=False, is_eval=False):
             _, key, _, _, label = line.strip().split(" ")  # 불필요한 중간 열 제거
             file_list.append(key)
             d_meta[key] = 1 if label == "bonafide" else 0
-        return d_meta, file_list
 
     elif is_eval:
         for line in l_meta:
             _, key, _, _, label = line.strip().split(" ")
             file_list.append(key)
+
         return file_list
+
     else:
         for line in l_meta:
             _, key, _, _, label = line.strip().split(" ")
             file_list.append(key)
             d_meta[key] = 1 if label == "bonafide" else 0
-        return d_meta, file_list
+
+    # Shuffle and retain a subset if specified
+    if retain_ratio is not None:
+        if seed is not None:
+            random.seed(seed)  # Set seed for reproducibility
+        random.shuffle(file_list)  # Shuffle file_list
+        retain_count = max(1, int(len(file_list) * retain_ratio))  # Ensure at least 1 element
+        file_list = file_list[:retain_count]  # Retain top retain_count elements
+        d_meta = {key: d_meta[key] for key in file_list}  # Filter d_meta based on retained keys
+    
+    return d_meta, file_list
 
 
 def pad(x, max_len=64600):

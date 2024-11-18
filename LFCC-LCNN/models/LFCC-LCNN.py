@@ -10,6 +10,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import sys
+from pathlib import Path
+# 프로젝트 루트 경로 추가 (sandbox가 포함된 상위 디렉터리 경로)
+project_root = Path("/Users/hongjiyoung/ADD/LFCC-LCNN/models").resolve().parent
+sys.path.append(str(project_root))
+
 import numpy as np
 
 import torch
