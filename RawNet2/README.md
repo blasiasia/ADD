@@ -24,13 +24,13 @@ Before running the experiment, replace the data directory of `database_path` in 
 
 To train the model:
 ```
-python ./main.py --config ./config/RawNet2_ASVspoof5.conf
+python ./main.py --config ./config/RawNet2.conf
 ```
 
 To evaluate the saved model (showed `EER: 15.2%` on validation set):
 * Evaluation only phase considers both of Phase 1 and Phase 2 evaluation metrics
 ```
-python ./main.py --config ./config/RawNet2_ASVspoof5.conf --eval
+python ./main.py --config ./config/RawNet2.conf --eval
 ```
 
 ## Citation
