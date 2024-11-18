@@ -19,6 +19,7 @@ from typing import Dict, List, Union
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch.utils.data import random_split
 from torch.utils.tensorboard import SummaryWriter
 from torchcontrib.optim import SWA
 
@@ -55,8 +56,8 @@ def main(args: argparse.Namespace) -> None:
     eval_paths = config["evaluation_database_path"]
     meta_paths = Path(config["meta_path"])
 
-    dev_trial_path = (meta_paths /
-                       "dev_meta.txt")
+    train_trial_path = (meta_paths /
+                       "train_meta.txt")
     eval_trial_path = (meta_paths /
                        "eval_meta.txt")
     
@@ -86,8 +87,8 @@ def main(args: argparse.Namespace) -> None:
     model = get_model(model_config, device)
 
     # define dataloaders
-    trn_loader, dev_loader = get_loader(
-        train_paths, val_paths, args.seed, config)
+    trn_loader, dev_loader = get_loader_split(
+        train_paths, args.seed, config)
 
     # evaluates pretrained model 
     # NOTE: Currently it is evaluated on the development set instead of the evaluation set
@@ -140,7 +141,7 @@ def main(args: argparse.Namespace) -> None:
                                    scheduler, config)
         
         produce_evaluation_file(dev_loader, model, device,
-                                metric_path/"dev_score.txt", dev_trial_path)
+                                metric_path/"dev_score.txt", train_trial_path)
         dev_eer, dev_dcf, dev_cllr = calculate_minDCF_EER_CLLR(
             cm_scores_file=metric_path/"dev_score.txt",
             output_file=metric_path/"dev_DCF_EER_{}epo.txt".format(epoch),
@@ -172,13 +173,13 @@ def get_model(model_config: Dict, device: torch.device):
     """Define DNN model architecture"""
     module = import_module("models.{}".format(model_config["architecture"]))
     _model = getattr(module, "Model")
-    model = _model(model_config).to(device)
+    model = _model(model_config, device).to(device)
     nb_params = sum([param.view(-1).size()[0] for param in model.parameters()])
     print("no. model params:{}".format(nb_params))
 
     return model
 
-
+'''
 def get_loader(
         train_paths: List[str],
         val_paths: List[str],
@@ -198,8 +199,8 @@ def get_loader(
         train_list_IDs.extend([f"{f}" for f in files])
 
     print("no. training files:", len(train_files))
-    print("train_files :", train_files[:5])
-    print("train_list_IDs :", train_list_IDs[:5])
+    #print("train_files :", train_files[:5])
+    #print("train_list_IDs :", train_list_IDs[:5])
     train_set = TrainDataset(list_IDs=train_list_IDs, labels=train_labels, base_dir=train_files)
     gen = torch.Generator().manual_seed(seed)
     trn_loader = DataLoader(
@@ -224,6 +225,65 @@ def get_loader(
     )
 
     return trn_loader, dev_loader
+'''
+def get_loader_split(
+        train_paths: List[str],
+        seed: int,
+        config: dict) -> List[torch.utils.data.DataLoader]:
+    """Make PyTorch DataLoaders for train/validation by splitting train dataset."""
+    val_split = config["val_split"]
+
+    # Initialize lists
+    train_files, train_labels = [], {}
+    train_list_IDs = []
+
+    # Load metadata from all train paths
+    for train_path in train_paths:
+        trn_list_path = Path(train_path) / "metadata.txt"
+        trn_base_path = Path(train_path) / "flac"
+        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False, retain_ratio=0.4, seed=100)
+        train_labels.update(labels)
+        train_files.extend([trn_base_path / f"{f}" for f in files])
+        train_list_IDs.extend([f"{f}" for f in files])
+
+    print("Total training files:", len(train_files))
+
+    # Split file names into training and validation sets
+    total_length = len(train_list_IDs)
+    val_length = int(total_length * val_split)
+    train_length = total_length - val_length
+
+    gen = torch.Generator().manual_seed(seed)
+    indices = torch.randperm(total_length, generator=gen).tolist()
+
+    train_indices = indices[:train_length]
+    val_indices = indices[train_length:]
+
+    train_list_IDs_split = [train_list_IDs[i] for i in train_indices]
+    val_list_IDs_split = [train_list_IDs[i] for i in val_indices]
+
+    train_files_split = [train_files[i] for i in train_indices]
+    val_files_split = [train_files[i] for i in val_indices]
+
+    # Train Dataset
+    train_set = TrainDataset(list_IDs=train_list_IDs_split, labels=train_labels, base_dir=train_files_split)
+
+    # Validation Dataset
+    val_set = TestDataset(list_IDs=val_list_IDs_split, base_dir=val_files_split)
+
+    # DataLoaders
+    train_loader = DataLoader(
+        train_set, batch_size=config["batch_size"], shuffle=True,
+        drop_last=True, pin_memory=True, worker_init_fn=seed_worker, generator=gen
+    )
+
+    val_loader = DataLoader(
+        val_set, batch_size=config["batch_size"], shuffle=False, 
+        drop_last=False, pin_memory=True
+    )
+
+    return train_loader, val_loader
+
 
 def get_loader_eval(
         eval_paths: List[str],
@@ -260,6 +320,52 @@ def produce_evaluation_file(
     trial_path: str) -> None:
     """Perform evaluation and save the score to a file"""
     model.eval()
+
+    # Load trial lines and create a dictionary for quick lookup
+    with open(trial_path, "r") as f_trl:
+        trial_lines = f_trl.readlines()
+
+    trial_dict = {}
+    for line in trial_lines:
+        spk_id, utt_id, _, src, key = line.strip().split(' ')
+        trial_dict[utt_id] = line.strip()
+
+    fname_list = []
+    score_list = []
+
+    for batch_x, utt_id in tqdm(data_loader):
+        batch_x = batch_x.to(device)
+        with torch.no_grad():
+            #_, batch_out = model(batch_x)
+            batch_out = model(batch_x)
+            batch_score = (batch_out[:, 1]).data.cpu().numpy().ravel()
+        # Add outputs
+        fname_list.extend(utt_id)
+        score_list.extend(batch_score.tolist())
+
+    # Save matched scores
+    with open(save_path, "w") as fh:
+        for fn, sco in zip(fname_list, score_list):
+            if fn in trial_dict:  # Match only if fn exists in trial_dict
+                spk_id, utt_id, _, src, key = trial_dict[fn].split(' ')
+                fh.write("{} {} {} {}\n".format(spk_id, utt_id, sco, key))
+            else:
+                print(f"Warning: {fn} not found in trial file.")
+                print("fname_list example:", fname_list[:5])
+                print("trial_dict keys example:", list(trial_dict.keys())[:5])
+
+
+    print("Scores saved to {}".format(save_path))
+
+'''
+def produce_evaluation_file(
+    data_loader: DataLoader,
+    model,
+    device: torch.device,
+    save_path: str,
+    trial_path: str) -> None:
+    """Perform evaluation and save the score to a file"""
+    model.eval()
     with open(trial_path, "r") as f_trl:
         trial_lines = f_trl.readlines()
     fname_list = []
@@ -281,7 +387,7 @@ def produce_evaluation_file(
             assert fn == utt_id
             fh.write("{} {} {} {}\n".format(spk_id, utt_id, sco, key))
     print("Scores saved to {}".format(save_path))
-
+'''
 def train_epoch(
     trn_loader: DataLoader,
     model,
@@ -307,7 +413,7 @@ def train_epoch(
         #_, batch_out = model(batch_x, Freq_aug=str_to_bool(config["freq_aug"]))
 
         # Forward pass through the model
-        batch_out = model(batch_x, Freq_aug=str_to_bool(config["freq_aug"]))  # 수정된 부분
+        batch_out = model(batch_x)  # 수정된 부분
 
         batch_loss = criterion(batch_out, batch_y)
         running_loss += batch_loss.item() * batch_size

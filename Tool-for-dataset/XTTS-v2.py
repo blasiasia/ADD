@@ -1,3 +1,7 @@
+import sys
+sys.path.append('/Users/hongjiyoung/TTS')
+sys.path.append('/Users/hongjiyoung/TTS/TTS')
+
 import os
 from datasets import load_dataset
 from TTS.api import TTS
