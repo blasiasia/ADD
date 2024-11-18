@@ -52,7 +52,6 @@ def main(args: argparse.Namespace) -> None:
     # define database related paths
     output_dir = Path(args.output_dir)
     train_paths = config["train_database_path"]
-    val_paths = config["validation_database_path"]
     eval_paths = config["evaluation_database_path"]
     meta_paths = Path(config["meta_path"])
 
