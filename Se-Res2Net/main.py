@@ -60,7 +60,7 @@ def main(args: argparse.Namespace) -> None:
                        "eval_meta.txt")
     
     # define model related paths
-    model_tag = "{}_ep{}_bs{}".format(
+    model_tag = "db03_{}_ep{}_bs{}".format(
         os.path.splitext(os.path.basename(args.config))[0],
         config["num_epochs"], config["batch_size"])
     if args.comment:
@@ -101,7 +101,7 @@ def main(args: argparse.Namespace) -> None:
 
         eval_dcf, eval_eer, eval_cllr = calculate_minDCF_EER_CLLR(
             cm_scores_file=eval_score_path,
-            output_file=model_tag/"db01_loaded_model_result.txt")
+            output_file=model_tag/"db03_loaded_model_result.txt")
         print("DONE. eval_eer: {:.3f}, eval_dcf:{:.5f} , eval_cllr:{:.5f}".format(eval_eer, eval_dcf, eval_cllr))
 
         """

@@ -14,7 +14,7 @@ def merge_meta_files(meta_dir, output_file):
                 print(f"Added {file_name} to {output_file}")
 
 if __name__ == "__main__":
-    meta_dir = r'/Volumes/System/metadata2'  # 메타데이터 파일들이 들어 있는 폴더
-    output_file = r'/Volumes/System/train_meta.txt'  # 결과를 저장할 파일
+    meta_dir = r'/Volumes/System/DS_Ours/db03/metadata'  # 메타데이터 파일들이 들어 있는 폴더
+    output_file = r'/Volumes/System/DS_Ours/db03/train_meta.txt'  # 결과를 저장할 파일
 
     merge_meta_files(meta_dir, output_file)
