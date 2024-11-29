@@ -87,17 +87,18 @@ class TrainDataset(Dataset):
     def __getitem__(self, index):
         key = self.list_IDs[index]
         y = self.labels[key]
-
-        for file_path in self.base_dir : 
-        # 파일 확장자 확인 및 파일 읽기
-            if file_path.exists():
-                X, _ = sf.read(str(file_path))
-                # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
-                if X.ndim == 2 and X.shape[1] > 1:
-                    X = X[:, 0]  # 첫 번째 채널만 사용
-                X_pad = pad_random(X, self.cut)
-                x_inp = Tensor(X_pad).unsqueeze(0)
-                return x_inp, y
+        file_path = self.base_dir[key]  # 딕셔너리에서 key로 경로 찾기
+        
+        if file_path.exists():
+            X, _ = sf.read(str(file_path))
+            # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
+            if X.ndim == 2 and X.shape[1] > 1:
+                X = X[:, 0]  # 첫 번째 채널만 사용
+            X_pad = pad_random(X, self.cut)
+            x_inp = Tensor(X_pad).unsqueeze(0)
+            return x_inp, y
+        else:
+            raise FileNotFoundError(f"File {file_path} does not exist.")
 
 class TestDataset(Dataset):
     def __init__(self, list_IDs, base_dir):
@@ -113,35 +114,15 @@ class TestDataset(Dataset):
 
     def __getitem__(self, index):
         key = self.list_IDs[index]
-
-        for file_path in self.base_dir : 
-            # 파일 확장자 확인 및 파일 읽기
-            if file_path.exists():
-                X, _ = sf.read(str(file_path))
-                # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
-                if X.ndim == 2 and X.shape[1] > 1:
-                    X = X[:, 0]  # 첫 번째 채널만 사용
-                X_pad = pad(X, self.cut)
-                x_inp = Tensor(X_pad).unsqueeze(0)
-                return x_inp, key
+        file_path = self.base_dir[key]  # 딕셔너리에서 key로 경로 찾기
+        if file_path.exists():
+            X, _ = sf.read(str(file_path))
+            # X의 차원이 (n_samples, n_channels)인 경우, n_channels을 1로 변환
+            if X.ndim == 2 and X.shape[1] > 1:
+                X = X[:, 0]  # 첫 번째 채널만 사용
+            X_pad = pad(X, self.cut)
+            x_inp = Tensor(X_pad).unsqueeze(0)
+            return x_inp, key
+        else:
+            raise FileNotFoundError(f"File {file_path} does not exist.")
     
-''' 
-class TestDataset(Dataset):
-    def __init__(self, list_IDs, base_dir):
-        """self.list_IDs	: list of strings (each string: utt key),
-        """
-        self.list_IDs = list_IDs
-        self.base_dir = base_dir
-        self.cut = 64600  # take ~4 sec audio (64600 samples)
-
-    def __len__(self):
-        return len(self.list_IDs)
-
-    def __getitem__(self, index):
-        key = self.list_IDs[index]
-        X, _ = sf.read(str(self.base_dir / f"{key}.flac"))
-        X_pad = pad(X, self.cut)
-        x_inp = Tensor(X_pad).unsqueeze(0)
-        return x_inp, key
-
-'''
