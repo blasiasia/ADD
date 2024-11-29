@@ -75,8 +75,11 @@ def main(args: argparse.Namespace) -> None:
 
 
     # set device
-    #device = "cuda" if torch.cuda.is_available() else "cpu"
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Visible devices:", os.environ.get("CUDA_VISIBLE_DEVICES"))
+    print("Available GPUs:", torch.cuda.device_count())
+    print("First GPU name:", torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "None")
+    #device = "mps" if torch.backends.mps.is_available() else "cpu"
     print("Device: {}".format(device))
     
     if device == "cpu":
@@ -86,7 +89,7 @@ def main(args: argparse.Namespace) -> None:
     model = get_model(model_config, device)
 
     # define dataloaders
-    trn_loader, dev_loader = get_loader_split(
+    trn_loader, dev_loader, train_labels = get_loader_split(
         train_paths, args.seed, config)
 
     # evaluates pretrained model 
@@ -136,7 +139,7 @@ def main(args: argparse.Namespace) -> None:
     for epoch in range(config["num_epochs"]):
         print("training epoch{:03d}".format(epoch))
         
-        running_loss = train_epoch(trn_loader, model, optimizer, device,
+        running_loss = train_epoch(trn_loader, train_labels, model, optimizer, device,
                                    scheduler, config)
         
         produce_evaluation_file(dev_loader, model, device,
@@ -178,53 +181,6 @@ def get_model(model_config: Dict, device: torch.device):
 
     return model
 
-'''
-def get_loader(
-        train_paths: List[str],
-        val_paths: List[str],
-        seed: int,
-        config: dict) -> List[torch.utils.data.DataLoader]:
-    """Make PyTorch DataLoaders for train / validation"""
-
-    # Train DataLoader
-    train_files, train_labels = [], {}
-    train_list_IDs = []
-    for train_path in train_paths:
-        trn_list_path = Path(train_path) / "metadata.txt"
-        trn_base_path = Path(train_path) / "flac"
-        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False)
-        train_labels.update(labels)
-        train_files.extend([trn_base_path / f"{f}" for f in files])
-        train_list_IDs.extend([f"{f}" for f in files])
-
-    print("no. training files:", len(train_files))
-    #print("train_files :", train_files[:5])
-    #print("train_list_IDs :", train_list_IDs[:5])
-    train_set = TrainDataset(list_IDs=train_list_IDs, labels=train_labels, base_dir=train_files)
-    gen = torch.Generator().manual_seed(seed)
-    trn_loader = DataLoader(
-        train_set, batch_size=config["batch_size"], shuffle=True,
-        drop_last=True, pin_memory=True, worker_init_fn=seed_worker, generator=gen
-    )
-
-    # Validation DataLoader
-    val_files = []
-    val_list_IDs = []
-    for val_path in val_paths:
-        dev_list_path = Path(val_path) / "metadata.txt"
-        dev_base_path = Path(val_path) /"flac"
-        _, files = genSpoof_list(dir_meta=dev_list_path, is_train=False, is_eval=False)
-        val_files.extend([dev_base_path / f"{f}" for f in files])
-        val_list_IDs.extend([f"{f}" for f in files])
-
-    print("no. validation files:", len(val_files))
-    dev_set = TestDataset(list_IDs=val_list_IDs, base_dir=val_files)
-    dev_loader = DataLoader(
-        dev_set, batch_size=config["batch_size"], shuffle=False, drop_last=False, pin_memory=True
-    )
-
-    return trn_loader, dev_loader
-'''
 def get_loader_split(
         train_paths: List[str],
         seed: int,
@@ -232,18 +188,21 @@ def get_loader_split(
     """Make PyTorch DataLoaders for train/validation by splitting train dataset."""
     val_split = config["val_split"]
 
-    # Initialize lists
-    train_files, train_labels = [], {}
+    # Initialize lists and dictionaries
+    train_labels = {}
     train_list_IDs = []
+    train_files = {}
 
     # Load metadata from all train paths
     for train_path in train_paths:
         trn_list_path = Path(train_path) / "metadata.txt"
         trn_base_path = Path(train_path) / "flac"
-        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False, retain_ratio=0.4, seed=100)
+        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False, retain_ratio=0.3, seed=100)
         train_labels.update(labels)
-        train_files.extend([trn_base_path / f"{f}" for f in files])
-        train_list_IDs.extend([f"{f}" for f in files])
+        for file in files:
+            file_path = trn_base_path / f"{file}"
+            train_files[file] = file_path
+        train_list_IDs.extend([f"{file}" for file in files])
 
     print("Total training files:", len(train_files))
 
@@ -261,14 +220,11 @@ def get_loader_split(
     train_list_IDs_split = [train_list_IDs[i] for i in train_indices]
     val_list_IDs_split = [train_list_IDs[i] for i in val_indices]
 
-    train_files_split = [train_files[i] for i in train_indices]
-    val_files_split = [train_files[i] for i in val_indices]
-
     # Train Dataset
-    train_set = TrainDataset(list_IDs=train_list_IDs_split, labels=train_labels, base_dir=train_files_split)
+    train_set = TrainDataset(list_IDs=train_list_IDs_split, labels=train_labels, base_dir=train_files)
 
     # Validation Dataset
-    val_set = TestDataset(list_IDs=val_list_IDs_split, base_dir=val_files_split)
+    val_set = TestDataset(list_IDs=val_list_IDs_split, base_dir=train_files)
 
     # DataLoaders
     train_loader = DataLoader(
@@ -281,8 +237,7 @@ def get_loader_split(
         drop_last=False, pin_memory=True
     )
 
-    return train_loader, val_loader
-
+    return train_loader, val_loader, train_labels
 
 def get_loader_eval(
         eval_paths: List[str],
@@ -350,45 +305,16 @@ def produce_evaluation_file(
                 fh.write("{} {} {} {}\n".format(spk_id, utt_id, sco, key))
             else:
                 print(f"Warning: {fn} not found in trial file.")
-                print("fname_list example:", fname_list[:5])
-                print("trial_dict keys example:", list(trial_dict.keys())[:5])
+                #print("fname_list example:", fname_list[:5])
+                #print("trial_dict keys example:", list(trial_dict.keys())[:5])
 
 
     print("Scores saved to {}".format(save_path))
 
-'''
-def produce_evaluation_file(
-    data_loader: DataLoader,
-    model,
-    device: torch.device,
-    save_path: str,
-    trial_path: str) -> None:
-    """Perform evaluation and save the score to a file"""
-    model.eval()
-    with open(trial_path, "r") as f_trl:
-        trial_lines = f_trl.readlines()
-    fname_list = []
-    score_list = []
-    for batch_x, utt_id in tqdm(data_loader):
-        batch_x = batch_x.to(device)
-        with torch.no_grad():
-            #_, batch_out = model(batch_x)
-            batch_out = model(batch_x)
-            batch_score = (batch_out[:, 1]).data.cpu().numpy().ravel()
-        # add outputs
-        fname_list.extend(utt_id)
-        score_list.extend(batch_score.tolist())
 
-    #assert len(trial_lines) == len(fname_list) == len(score_list)
-    with open(save_path, "w") as fh:
-        for fn, sco, trl in zip(fname_list, score_list, trial_lines):
-            spk_id, utt_id, _, src, key = trl.strip().split(' ')
-            assert fn == utt_id
-            fh.write("{} {} {} {}\n".format(spk_id, utt_id, sco, key))
-    print("Scores saved to {}".format(save_path))
-'''
 def train_epoch(
     trn_loader: DataLoader,
+    train_labels, 
     model,
     optim: Union[torch.optim.SGD, torch.optim.Adam],
     device: torch.device,
@@ -401,8 +327,14 @@ def train_epoch(
     model.train()
 
     # set objective (Loss) functions
-    weight = torch.FloatTensor([0.1, 0.9]).to(device)
+    #weight = torch.FloatTensor([0.1, 0.9]).to(device)
+    
+    # 데이터셋 클래스 비율 기반으로 weight 계산
+    class_counts = [len([y for y in train_labels.values() if y == i]) for i in range(2)]
+    class_weights = [1.0 / count for count in class_counts]
+    weight = torch.FloatTensor(class_weights).to(device)
     criterion = nn.CrossEntropyLoss(weight=weight)
+
     for batch_x, batch_y in tqdm(trn_loader):
         batch_size = batch_x.size(0)
         num_total += batch_size
@@ -412,7 +344,7 @@ def train_epoch(
         #_, batch_out = model(batch_x, Freq_aug=str_to_bool(config["freq_aug"]))
 
         # Forward pass through the model
-        batch_out = model(batch_x)  # 수정된 부분
+        batch_out = model(batch_x).to(device)  # 수정된 부분
 
         batch_loss = criterion(batch_out, batch_y)
         running_loss += batch_loss.item() * batch_size
