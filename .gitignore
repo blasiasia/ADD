@@ -1,1 +1,4 @@
 .DS_Store
+*.pth
+events.out.tfevents.*
+.ipynb_checkpoints/

@@ -60,7 +60,7 @@ def main(args: argparse.Namespace) -> None:
                        "eval_meta.txt")
     
     # define model related paths
-    model_tag = "db01_{}_ep{}_bs{}".format(
+    model_tag = "db05_{}_ep{}_bs{}".format(
         os.path.splitext(os.path.basename(args.config))[0],
         config["num_epochs"], config["batch_size"])
     if args.comment:
@@ -104,7 +104,7 @@ def main(args: argparse.Namespace) -> None:
 
         eval_dcf, eval_eer, eval_cllr = calculate_minDCF_EER_CLLR(
             cm_scores_file=eval_score_path,
-            output_file=model_tag/"db01_loaded_model_result.txt")
+            output_file=model_tag/"db05_loaded_model_result.txt")
         print("DONE. eval_eer: {:.3f}, eval_dcf:{:.5f} , eval_cllr:{:.5f}".format(eval_eer, eval_dcf, eval_cllr))
 
         """
@@ -133,7 +133,9 @@ def main(args: argparse.Namespace) -> None:
     # make directory for metric logging
     metric_path = model_tag / "metrics"
     os.makedirs(metric_path, exist_ok=True)
-
+    # EarlyStopping 객체 생성
+    early_stopping = EarlyStopping(patience=5, delta=0.01, verbose=True, path=model_save_path / "best_model.pth")
+    
     # Training
     for epoch in range(config["num_epochs"]):
         print("training epoch{:03d}".format(epoch))
@@ -155,7 +157,12 @@ def main(args: argparse.Namespace) -> None:
         writer.add_scalar("dev_cllr", dev_cllr, epoch)
         torch.save(model.state_dict(),
                        model_save_path / "epoch_{}_{:03.3f}.pth".format(epoch, dev_eer))
-
+        
+        # Early stopping check
+        if early_stopping(dev_eer, model):
+            print(f"Early stopping at epoch {epoch}")
+            break  # Stop training if early stopping condition is met
+        
         best_dev_dcf = min(dev_dcf, best_dev_dcf)
         best_dev_cllr = min(dev_cllr, best_dev_cllr)
         if best_dev_eer >= dev_eer:
@@ -196,7 +203,7 @@ def get_loader_split(
     for train_path in train_paths:
         trn_list_path = Path(train_path) / "metadata.txt"
         trn_base_path = Path(train_path) / "flac"
-        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False, retain_ratio=0.3, seed=100)
+        labels, files = genSpoof_list(dir_meta=trn_list_path, is_train=True, is_eval=False, retain_ratio=0.4, seed=100)
         train_labels.update(labels)
         for file in files:
             file_path = trn_base_path / f"{file}"
@@ -245,13 +252,16 @@ def get_loader_eval(
     """Make PyTorch DataLoader for evaluation"""
 
     # Evaluation DataLoader
-    eval_files = []
+    eval_files = {}
     eval_list_IDs = []
     for eval_path in eval_paths:
         eval_list_path = Path(eval_path) / "metadata.txt"
         eval_base_path = Path(eval_path) /"flac"
         files = genSpoof_list(dir_meta=eval_list_path, is_train=False, is_eval=True)
-        eval_files.extend([eval_base_path / f"{f}" for f in files])
+        #eval_files.extend([eval_base_path / f"{f}" for f in files])
+        for file in files:
+            file_path = eval_base_path / f"{file}"
+            eval_files[file] = file_path
         eval_list_IDs.extend([f"{f}" for f in files])
 
     print("no. evaluation files:", len(eval_files))
@@ -362,6 +372,50 @@ def train_epoch(
     running_loss /= num_total
     return running_loss
 
+class EarlyStopping:
+    def __init__(self, patience: int = 10, delta: float = 0.0, verbose: bool = True, path: str = "checkpoint.pth"):
+        """
+        Early stopping class to stop training when validation loss is not improving.
+
+        :param patience: number of epochs with no improvement after which training will be stopped.
+        :param delta: minimum change to qualify as an improvement.
+        :param verbose: if True, prints a message for each validation loss improvement.
+        :param path: path to save the model when early stopping is triggered.
+        """
+        self.patience = patience
+        self.delta = delta
+        self.verbose = verbose
+        self.path = path
+        self.counter = 0
+        self.best_score = None
+        self.best_model_wts = None
+
+    def __call__(self, val_loss: float, model: nn.Module):
+        """
+        This function should be called after each validation step to check if early stopping should be applied.
+        
+        :param val_loss: current validation loss to compare with the best score.
+        :param model: current model to save if it is the best.
+        """
+        score = -val_loss  # we want to minimize loss, so higher score means better
+        
+        if self.best_score is None:
+            self.best_score = score
+            self.best_model_wts = model.state_dict()
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose:
+                print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
+            if self.counter >= self.patience:
+                print("Early stopping triggered.")
+                model.load_state_dict(self.best_model_wts)
+                return True  # Stop training
+        else:
+            self.best_score = score
+            self.best_model_wts = model.state_dict()
+            self.counter = 0
+            
+        return False  # Continue training
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ASVspoof detection system")

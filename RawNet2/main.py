@@ -135,6 +135,9 @@ def main(args: argparse.Namespace) -> None:
     metric_path = model_tag / "metrics"
     os.makedirs(metric_path, exist_ok=True)
 
+    # EarlyStopping 객체 생성
+    early_stopping = EarlyStopping(patience=5, delta=0.01, verbose=True, path=model_save_path / "best_model.pth")
+    
     # Training
     for epoch in range(config["num_epochs"]):
         print("training epoch{:03d}".format(epoch))
@@ -157,6 +160,11 @@ def main(args: argparse.Namespace) -> None:
         torch.save(model.state_dict(),
                        model_save_path / "epoch_{}_{:03.3f}.pth".format(epoch, dev_eer))
 
+        # Early stopping check
+        if early_stopping(dev_eer, model):
+            print(f"Early stopping at epoch {epoch}")
+            break  # Stop training if early stopping condition is met
+        
         best_dev_dcf = min(dev_dcf, best_dev_dcf)
         best_dev_cllr = min(dev_cllr, best_dev_cllr)
         if best_dev_eer >= dev_eer:
@@ -362,7 +370,51 @@ def train_epoch(
     running_loss /= num_total
     return running_loss
 
+class EarlyStopping:
+    def __init__(self, patience: int = 10, delta: float = 0.0, verbose: bool = True, path: str = "checkpoint.pth"):
+        """
+        Early stopping class to stop training when validation loss is not improving.
 
+        :param patience: number of epochs with no improvement after which training will be stopped.
+        :param delta: minimum change to qualify as an improvement.
+        :param verbose: if True, prints a message for each validation loss improvement.
+        :param path: path to save the model when early stopping is triggered.
+        """
+        self.patience = patience
+        self.delta = delta
+        self.verbose = verbose
+        self.path = path
+        self.counter = 0
+        self.best_score = None
+        self.best_model_wts = None
+
+    def __call__(self, val_loss: float, model: nn.Module):
+        """
+        This function should be called after each validation step to check if early stopping should be applied.
+        
+        :param val_loss: current validation loss to compare with the best score.
+        :param model: current model to save if it is the best.
+        """
+        score = -val_loss  # we want to minimize loss, so higher score means better
+        
+        if self.best_score is None:
+            self.best_score = score
+            self.best_model_wts = model.state_dict()
+        elif score < self.best_score + self.delta:
+            self.counter += 1
+            if self.verbose:
+                print(f"EarlyStopping counter: {self.counter} out of {self.patience}")
+            if self.counter >= self.patience:
+                print("Early stopping triggered.")
+                model.load_state_dict(self.best_model_wts)
+                return True  # Stop training
+        else:
+            self.best_score = score
+            self.best_model_wts = model.state_dict()
+            self.counter = 0
+            
+        return False  # Continue training
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ASVspoof detection system")
     parser.add_argument("--config",
