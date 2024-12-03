@@ -1,6 +1,6 @@
 # 파일 경로 설정
-input_metadata_path = "/Volumes/System/MeloTTS/wikipedia/E02_wiki.txt"
-output_metadata_path = "/Volumes/System/MeloTTS/wikipedia/metadata.txt"
+input_metadata_path = "/mnt/aix23606/jiyoung/ADD/DS_E05_Elevenlabs/meta_tts_final.txt"
+output_metadata_path = "/mnt/aix23606/jiyoung/ADD/DS_E05_Elevenlabs/metadata.txt"
 
 # 파일 열고 메타데이터 수정하기
 with open(input_metadata_path, 'r') as input_file, open(output_metadata_path, 'w') as output_file:
