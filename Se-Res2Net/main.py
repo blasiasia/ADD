@@ -57,10 +57,10 @@ def main(args: argparse.Namespace) -> None:
     train_trial_path = (meta_paths /
                        "train_meta.txt")
     eval_trial_path = (meta_paths /
-                       "eval_meta.txt")
+                       "eval_meta_test01.txt")
     
     # define model related paths
-    model_tag = "db05_{}_ep{}_bs{}".format(
+    model_tag = "db04_2_{}_ep{}_bs{}".format(
         os.path.splitext(os.path.basename(args.config))[0],
         config["num_epochs"], config["batch_size"])
     if args.comment:
@@ -104,7 +104,7 @@ def main(args: argparse.Namespace) -> None:
 
         eval_dcf, eval_eer, eval_cllr = calculate_minDCF_EER_CLLR(
             cm_scores_file=eval_score_path,
-            output_file=model_tag/"db05_loaded_model_result.txt")
+            output_file=model_tag/"db04_2_test01_loaded_model_result.txt")
         print("DONE. eval_eer: {:.3f}, eval_dcf:{:.5f} , eval_cllr:{:.5f}".format(eval_eer, eval_dcf, eval_cllr))
 
         """
@@ -257,7 +257,7 @@ def get_loader_eval(
     for eval_path in eval_paths:
         eval_list_path = Path(eval_path) / "metadata.txt"
         eval_base_path = Path(eval_path) /"flac"
-        files = genSpoof_list(dir_meta=eval_list_path, is_train=False, is_eval=True)
+        files = genSpoof_list(dir_meta=eval_list_path, is_train=False, is_eval=True, retain_ratio=0.4)
         #eval_files.extend([eval_base_path / f"{f}" for f in files])
         for file in files:
             file_path = eval_base_path / f"{file}"
