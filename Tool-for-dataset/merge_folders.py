@@ -26,10 +26,11 @@ def copy_files_to_new_folder(source_folders, destination_folder):
 
 # Example usage
 source_folders = [
-    "/mnt/aix23606/jiyoung/ADD/DS_E05_Elevenlabs/aihub/cys",
-    "/mnt/aix23606/jiyoung/ADD/DS_E05_Elevenlabs/aihub/hjy",
-    "/mnt/aix23606/jiyoung/ADD/DS_E05_Elevenlabs/aihub/osy"
+    "/mnt/aix23606/jiyoung/ADD/DS_E01_Encodec/ASVspoof2019_LA_dev_Spoof/E01_02_wav/flac",
+    "/mnt/aix23606/jiyoung/ADD/DS_E01_Encodec/ASVspoof2019_LA_eval_Spoof/E01_02_wav/flac",
+    "/mnt/aix23606/jiyoung/ADD/DS_E01_Encodec/ASVspoof2019_LA_train_Spoof/E01_02_wav/flac",
+    "/mnt/aix23606/jiyoung/ADD/DS_E01_Encodec/inthewild_Spoof/E01_02_flac/flac"
 ]
-destination_folder = "/mnt/aix23606/jiyoung/ADD/DS_E05_Elevenlabs/flac"
+destination_folder = "/mnt/aix23606/jiyoung/ADD/DS_E01_Encodec/E01_02/flac"
 
 copy_files_to_new_folder(source_folders, destination_folder)

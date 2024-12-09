@@ -8,8 +8,46 @@ import random
 ___author__ = "Hemlata Tak, Jee-weon Jung"
 __email__ = "tak@eurecom.fr, jeeweon.jung@navercorp.com"
 
-
 def genSpoof_list(dir_meta, is_train=False, is_eval=False, retain_ratio=None, seed=None):
+    # retain_ratio : 전체 dataset에서 일부 샘플링
+    d_meta = {}
+    file_list = []
+
+    with open(dir_meta, "r") as f:
+        l_meta = f.readlines()
+
+    if is_train:
+        for line in l_meta:
+            _, key, _, _, label = line.strip().split(" ")  # 불필요한 중간 열 제거
+            file_list.append(key)
+            d_meta[key] = 1 if label == "bonafide" else 0
+
+    elif is_eval:
+        for line in l_meta:
+            _, key, _, _, label = line.strip().split(" ")
+            file_list.append(key)
+
+    else:
+        for line in l_meta:
+            _, key, _, _, label = line.strip().split(" ")
+            file_list.append(key)
+            d_meta[key] = 1 if label == "bonafide" else 0
+
+    # Shuffle and retain a subset if specified
+    if retain_ratio is not None:
+        if seed is not None:
+            random.seed(seed)  # Set seed for reproducibility
+        random.shuffle(file_list)  # Shuffle file_list
+        retain_count = max(1, int(len(file_list) * retain_ratio))  # Ensure at least 1 element
+        file_list = file_list[:retain_count]  # Retain top retain_count elements
+
+        # For train and non-eval cases, filter d_meta based on retained keys
+        if not is_eval:
+            d_meta = {key: d_meta[key] for key in file_list}
+
+    return (d_meta, file_list) if not is_eval else file_list
+
+def genSpoof_list1(dir_meta, is_train=False, is_eval=False, retain_ratio=None, seed=None):
     # retain_ratio : 전체 dataset에서 40% sampling
     d_meta = {}
     file_list = []
