@@ -36,10 +36,10 @@ Please refer to this complementary repository for more details on the synthesis 
 
 To clone the repository, run the following command:
 
-'''bash
+''''
 git clone https://github.com/blasiasia/ADD.git
 cd ADD
-'''
+''''
 
 To install the required dependencies, run:
 
