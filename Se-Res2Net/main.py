@@ -217,8 +217,9 @@ def get_loader_split(
     val_length = int(total_length * val_split)
     train_length = total_length - val_length
 
-    gen = torch.Generator().manual_seed(seed)
-    indices = torch.randperm(total_length, generator=gen).tolist()
+    gen = torch.Generator().manual_seed(seed) # 난수 생성기 정의. 고정된 seed값 제공 -> 항상 같은 난수를 생성. 재현 가능성
+    indices = torch.randperm(total_length, generator=gen).tolist() # 0~total_length-1  까지의 정수를 무작위로 섞어서 반환  
+                                                                    # seed가 고정되어 셔플 순서가 고정됨
 
     train_indices = indices[:train_length]
     val_indices = indices[train_length:]
