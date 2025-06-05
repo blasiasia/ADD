@@ -2,3 +2,4 @@
 *.pth
 events.out.tfevents.*
 .ipynb_checkpoints/
+VoiceCraft/encodec_4cb2048_giga.th
